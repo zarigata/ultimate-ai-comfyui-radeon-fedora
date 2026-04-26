@@ -1,4 +1,3 @@
-```
 # Conda
 .miniforge/
 .conda/
@@ -47,4 +46,3 @@ Thumbs.db
 input/
 output/
 temp/
-```

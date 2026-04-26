@@ -83,39 +83,124 @@ install_models() {
         fi
 
         info "Downloading $name (~${size_mb}MB)..."
-        local success=0
-
-        if command -v huggingface-cli &>/dev/null; then
-            if huggingface-cli download --local-dir "$dest_dir" "$url" 2>/dev/null; then
-                success=1
-            fi
-        fi
-
-        if [[ "$success" -eq 0 ]] && command -v wget &>/dev/null; then
-            if wget -q -O "$dest_dir/$filename" "$url" 2>/dev/null; then
-                success=1
-            fi
-        fi
-
-        if [[ "$success" -eq 0 ]] && command -v curl &>/dev/null; then
-            if curl -fsSL -o "$dest_dir/$filename" "$url" 2>/dev/null; then
-                success=1
-            fi
-        fi
-
-        if [[ -s "$dest_dir/$filename" ]]; then
+        if _download_file "$url" "$dest_dir/$filename" "$name"; then
             downloaded+=("$name")
-            success "$name downloaded"
         else
-            rm -f "$dest_dir/$filename" 2>/dev/null || true
             warn "$name: download failed — will need manual download"
+            info "  Visit: $url"
+            info "  Place file as: $dest_dir/$filename"
+            [[ "$needs_hf" == "true" ]] && info "  NOTE: Requires HuggingFace login/token"
             manual+=("$name")
         fi
     done
 
     info "Downloaded: ${#downloaded[@]} models"
     [[ ${#manual[@]} -gt 0 ]] && info "Manual download needed: ${manual[*]}"
+
+    _prompt_ltx_models "$MODELS_ROOT"
+
     return 0
+}
+
+_prompt_ltx_models() {
+    local MODELS_ROOT="$1"
+
+    local -a ltx_models=(
+        "LTX-2.3 main model (fp8)|https://huggingface.co/Lightricks/LTX-2.3-fp8/resolve/main/ltx-2.3-22b-dev-fp8.safetensors|checkpoints|ltx-2.3-22b-dev-fp8.safetensors|22000"
+        "LTX-2.3 spatial upscaler|https://huggingface.co/Lightricks/LTX-2.3/resolve/main/ltx-2.3-spatial-upscaler-x2-1.1.safetensors|upscale_models|ltx-2.3-spatial-upscaler-x2-1.1.safetensors|1500"
+        "LTX-2.3 distilled LoRA|https://huggingface.co/Lightricks/LTX-2.3/resolve/main/ltx-2.3-22b-distilled-lora-384.safetensors|loras|ltx-2.3-22b-distilled-lora-384.safetensors|800"
+        "Gemma 3 12B text encoder (fp4)|https://huggingface.co/Comfy-Org/ltx-2/resolve/main/split_files/text_encoders/gemma_3_12B_it_fp4_mixed.safetensors|text_encoders|gemma_3_12B_it_fp4_mixed.safetensors|6000"
+    )
+
+    local all_present=1
+    for entry in "${ltx_models[@]}"; do
+        IFS='|' read -r _ _ subfolder filename _ <<< "$entry"
+        if [[ ! -f "$MODELS_ROOT/$subfolder/$filename" ]]; then
+            all_present=0
+            break
+        fi
+    done
+
+    if [[ "$all_present" -eq 1 ]]; then
+        info "All LTX-2.3 models already present, skipping prompt."
+        return 0
+    fi
+
+    echo ""
+    section "LTX-2.3 Video Models"
+    info "The following LTX-2.3 video generation models are available:"
+    echo ""
+    local total_size=0
+    for entry in "${ltx_models[@]}"; do
+        IFS='|' read -r label url subfolder filename size_mb <<< "$entry"
+        local status_icon="⬜"
+        if [[ -f "$MODELS_ROOT/$subfolder/$filename" ]]; then
+            status_icon="✅"
+        fi
+        local size_gb=$((size_mb / 1000))
+        printf "  %s %-42s (~%dGB)\n" "$status_icon" "$label" "$size_gb"
+        total_size=$((total_size + size_mb))
+    done
+    local total_gb=$((total_size / 1000))
+    echo ""
+    info "Total download size: ~${total_gb}GB"
+    echo ""
+
+    if [[ "${CONFY_NONINTERACTIVE:-0}" -eq 1 ]]; then
+        info "Non-interactive mode — skipping LTX-2.3 (re-run interactively to download)."
+        return 0
+    fi
+
+    ask_yes_no "Download all LTX-2.3 models?" "default_n" || {
+        info "Skipping LTX-2.3 models."
+        return 0
+    }
+
+    for entry in "${ltx_models[@]}"; do
+        IFS='|' read -r label url subfolder filename size_mb <<< "$entry"
+
+        local dest_dir="$MODELS_ROOT/$subfolder"
+        mkdir -p "$dest_dir"
+
+        if [[ -f "$dest_dir/$filename" ]]; then
+            success "$label: already present"
+            continue
+        fi
+
+        info "Downloading $label (~${size_mb}MB)..."
+        _download_file "$url" "$dest_dir/$filename" "$label"
+    done
+}
+
+_download_file() {
+    local url="$1" dest="$2" label="$3"
+    local success=0
+
+    if command -v wget &>/dev/null; then
+        if wget --progress=bar:force:noscroll -O "$dest" "$url" 2>&1; then
+            success=1
+        fi
+    fi
+
+    if [[ "$success" -eq 0 ]] && command -v curl &>/dev/null; then
+        if curl -fL --progress-bar -o "$dest" "$url" 2>&1; then
+            success=1
+        fi
+    fi
+
+    if [[ "$success" -eq 0 ]]; then
+        rm -f "$dest" 2>/dev/null || true
+        return 1
+    fi
+
+    if [[ -s "$dest" ]]; then
+        success "$label downloaded"
+        return 0
+    else
+        rm -f "$dest" 2>/dev/null || true
+        warn "$label: download produced empty file"
+        return 1
+    fi
 }
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
