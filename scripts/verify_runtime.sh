@@ -32,6 +32,12 @@ verify_runtime() {
         all_ok=0
     fi
 
+    # Set LD_LIBRARY_PATH for torch libs
+    local torch_lib="$conda_env_path/lib/python3.12/site-packages/torch/lib"
+    if [[ -d "$torch_lib" ]]; then
+        export LD_LIBRARY_PATH="$torch_lib:${LD_LIBRARY_PATH:-}"
+    fi
+
     # Run GPU verification
     if [[ -x "$py_bin" ]]; then
         info "Running GPU verification..."

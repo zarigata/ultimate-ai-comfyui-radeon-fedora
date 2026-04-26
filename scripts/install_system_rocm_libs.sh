@@ -24,11 +24,15 @@ install_system_rocm_libs() {
         fi
     done
 
-    # Check ffmpeg
+    # Check ffmpeg (Nobara uses ffmpeg-free which provides the same binary)
     if rpm -q ffmpeg &>/dev/null; then
         step "ffmpeg: already installed"
+    elif rpm -q ffmpeg-free &>/dev/null; then
+        step "ffmpeg-free: already installed (Nobara default)"
+    elif command -v ffmpeg &>/dev/null; then
+        step "ffmpeg: available via existing package"
     else
-        to_install+=("ffmpeg")
+        to_install+=("ffmpeg-free")
     fi
 
     # Check ROCm packages — ask per-package unless aggressive/noninteractive
@@ -74,7 +78,7 @@ install_system_rocm_libs() {
     fi
 
     # Install
-    local dnf_args=(sudo dnf install -y "${to_install[@]}" --setopt=install_weak_deps=False)
+    local dnf_args=(sudo dnf install -y "${to_install[@]}" --setopt=install_weak_deps=False --skip-broken)
 
     info "Running: ${dnf_args[*]}"
 
@@ -84,12 +88,12 @@ install_system_rocm_libs() {
 
         if [[ "${CONFY_DISABLE_PROBLEM_REPOS:-0}" -eq 1 ]]; then
             warn "Retrying with --disablerepo='nobara-pikaos-additional'..."
-            if ! sudo dnf install -y "${to_install[@]}" --disablerepo='nobara-pikaos-additional' --setopt=install_weak_deps=False; then
+            if ! sudo dnf install -y "${to_install[@]}" --disablerepo='nobara-pikaos-additional' --setopt=install_weak_deps=False --skip-broken; then
                 error "Retry also failed. You may need to resolve conflicts manually."
                 return 1
             fi
         elif ask_yes_no "Retry with --disablerepo='nobara-pikaos-additional'?" "default_n"; then
-            if ! sudo dnf install -y "${to_install[@]}" --disablerepo='nobara-pikaos-additional' --setopt=install_weak_deps=False; then
+            if ! sudo dnf install -y "${to_install[@]}" --disablerepo='nobara-pikaos-additional' --setopt=install_weak_deps=False --skip-broken; then
                 error "Retry failed. Check the error output above."
                 return 1
             fi

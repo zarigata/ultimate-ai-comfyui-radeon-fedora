@@ -7,7 +7,11 @@ export REPO_ROOT="$SCRIPT_DIR"
 _setup_env() {
     export PYTHONNOUSERSITE=1
     unset PYTHONPATH
-    export LD_LIBRARY_PATH="/usr/lib64:/usr/lib64/rocm:/opt/rocm/lib:${LD_LIBRARY_PATH:-}"
+    local torch_lib=""
+    if [[ -d "$SCRIPT_DIR/.conda/envs/comfyui-radeon/lib/python3.12/site-packages/torch/lib" ]]; then
+        torch_lib="$SCRIPT_DIR/.conda/envs/comfyui-radeon/lib/python3.12/site-packages/torch/lib"
+    fi
+    export LD_LIBRARY_PATH="${torch_lib}${torch_lib:+:}/usr/lib64:/usr/lib64/rocm:/opt/rocm/lib:/opt/amdgpu/lib:${LD_LIBRARY_PATH:-}"
 
     if [[ -f "$SCRIPT_DIR/.miniforge/etc/profile.d/conda.sh" ]]; then
         # shellcheck disable=SC1090

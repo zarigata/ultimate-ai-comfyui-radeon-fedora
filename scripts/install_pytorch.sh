@@ -67,11 +67,13 @@ install_pytorch() {
         return 1
     }
 
-    # Strategy A: AMD Radeon wheels
+    # Strategy A: AMD Radeon wheels (use --index-url to prevent fallback to default PyPI)
     if [[ "$try_amd" -eq 1 ]]; then
         info "Strategy A: Trying AMD wheels from repo.radeon.com (rocm-rel-${ROCM_VER})..."
         local amd_url="https://repo.radeon.com/rocm/manylinux/rocm-rel-${ROCM_VER}/"
-        if "$py_bin" -m pip install torch torchvision torchaudio --find-links "$amd_url" 2>&1 | tail -5; then
+        # First uninstall any existing torch to avoid conflicts
+        "$py_bin" -m pip uninstall -y torch torchvision torchaudio 2>/dev/null || true
+        if "$py_bin" -m pip install torch torchvision torchaudio --index-url "$amd_url" 2>&1 | tail -5; then
             if _verify_torch "amd"; then
                 return 0
             fi
