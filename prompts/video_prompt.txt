@@ -1,0 +1,36 @@
+# AI Video Prompt Templates
+# 
+# These are starting points for your AI video generation.
+# Edit and customize for your needs.
+#
+# Tips:
+# - Be specific about camera movement (pan left, zoom in, orbit)
+# - Describe lighting and atmosphere
+# - Include style references (cinematic, anime, photorealistic)
+# - Specify quality modifiers (masterpiece, best quality, 4K)
+
+## Basic Scene Prompts
+
+### Nature Scene
+A serene mountain lake at dawn, mist rising from the water surface, 
+sunlight filtering through pine trees, cinematic lighting, 
+slow camera pan from left to right, 4K quality
+
+### Urban Scene
+A bustling city street at night, neon lights reflecting on wet pavement,
+people walking with umbrellas, cinematic noir style,
+slow dolly zoom, volumetric fog
+
+### Abstract
+Flowing liquid mercury forming geometric shapes, 
+reflective surface catching rainbow light, 
+smooth camera orbit, abstract art style
+
+## Video-Specific Modifiers
+- Camera movement: slow pan, dolly zoom, orbit, crane shot, static
+- Style: cinematic, anime, photorealistic, oil painting, watercolor
+- Quality: masterpiece, best quality, highly detailed, 4K, 8K
+- Atmosphere: dramatic lighting, soft lighting, volumetric fog, lens flare
+
+## Negative Prompts (what to avoid)
+blurry, low quality, distorted, deformed, watermark, text, logo

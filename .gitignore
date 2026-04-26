@@ -1,0 +1,50 @@
+```
+# Conda
+.miniforge/
+.conda/
+
+# ComfyUI
+ComfyUI/
+
+# Logs
+logs/*.log
+!logs/.gitkeep
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+
+# Backups
+*.backup/
+.preclone.*/
+.backup/
+
+# State files
+.torch-version
+.comfyui-installed
+.hsa-override
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+.swo
+
+# Models (too large for git)
+*.safetensors
+*.ckpt
+*.pt
+*.pth
+*.bin
+
+# Misc
+input/
+output/
+temp/
+```
